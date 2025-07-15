@@ -2,39 +2,65 @@ import streamlit as st
 import pandas as pd
 import joblib
 
-# Load model
+# Load model SVM
 model = joblib.load('model_penyakit_jantung.pkl')
 
 st.title("Prediksi Risiko Penyakit Jantung")
-st.write("Silakan masukkan data pasien di bawah ini:")
+st.write("Masukkan data pasien di bawah ini untuk mengetahui kemungkinan risiko penyakit jantung.")
 
 with st.form("form_prediksi"):
-    new_age = st.number_input("Masukkan usia", min_value=1, max_value=120, value=50)
-    new_sex = st.selectbox("Jenis kelamin", options={"Laki-laki": 1, "Perempuan": 2})
-    new_cp = st.selectbox("Tipe nyeri dada", options={
-        "Typical Angina (TA)": 0,
-        "Atypical Angina (ATA)": 1,
-        "Non-Anginal Pain (NAP)": 2,
-        "Asymptomatic (ASY)": 3
-    })
-    new_restingbp = st.number_input("Tekanan darah istirahat (mm Hg)", min_value=0, max_value=300, value=130)
-    new_chol = st.number_input("Kadar kolesterol (mg/dL)", min_value=0, max_value=700, value=200)
-    new_fbs = st.selectbox("Gula darah puasa > 120 mg/dL?", options={"Tidak": 0, "Ya": 1})
-    new_ecg = st.selectbox("Hasil EKG saat istirahat", options={
-        "LVH": 0, "Normal": 1, "ST-T Wave Abnormality (ST)": 2
-    })
-    new_maxhr = st.number_input("Detak jantung maksimum", min_value=60, max_value=250, value=150)
-    new_angina = st.selectbox("Angina saat olahraga", options={"Tidak": 0, "Ya": 1})
-    new_oldpeak = st.number_input("Nilai oldpeak (depresi ST)", min_value=-5.0, max_value=10.0, value=1.0)
-    new_slope = st.selectbox("Kemiringan segmen ST", options={
-        "Down": 0, "Flat": 1, "Up": 2
-    })
+    new_age = st.number_input("Usia", min_value=1, max_value=120, value=50)
+
+    new_sex = st.selectbox(
+        "Jenis Kelamin",
+        options=[1, 2],
+        format_func=lambda x: "Laki-laki" if x == 1 else "Perempuan"
+    )
+
+    new_cp = st.selectbox(
+        "Tipe Nyeri Dada",
+        options=[0, 1, 2, 3],
+        format_func=lambda x: {0: "Typical Angina (TA)", 1: "Atypical Angina (ATA)", 2: "Non-Anginal Pain (NAP)", 3: "Asymptomatic (ASY)"}[x]
+    )
+
+    new_restingbp = st.number_input("Tekanan Darah Istirahat (mm Hg)", min_value=0, max_value=300, value=120)
+
+    new_chol = st.number_input("Kadar Kolesterol (mg/dL)", min_value=0, max_value=700, value=200)
+
+    new_fbs = st.selectbox(
+        "Gula Darah Puasa > 120 mg/dL?",
+        options=[0, 1],
+        format_func=lambda x: "Tidak" if x == 0 else "Ya"
+    )
+
+    new_ecg = st.selectbox(
+        "Hasil EKG Saat Istirahat",
+        options=[0, 1, 2],
+        format_func=lambda x: {0: "LVH", 1: "Normal", 2: "ST-T Wave Abnormality"}[x]
+    )
+
+    new_maxhr = st.number_input("Detak Jantung Maksimum", min_value=60, max_value=250, value=150)
+
+    new_angina = st.selectbox(
+        "Angina Saat Olahraga",
+        options=[0, 1],
+        format_func=lambda x: "Tidak" if x == 0 else "Ya"
+    )
+
+    new_oldpeak = st.number_input("Nilai Oldpeak (Depresi ST)", min_value=-5.0, max_value=10.0, value=1.0, step=0.1)
+
+    new_slope = st.selectbox(
+        "Kemiringan Segmen ST",
+        options=[0, 1, 2],
+        format_func=lambda x: {0: "Down", 1: "Flat", 2: "Up"}[x]
+    )
 
     submit = st.form_submit_button("Prediksi")
 
+# Proses prediksi
 if submit:
     try:
-        new_data_df = pd.DataFrame([[
+        input_data = pd.DataFrame([[
             new_age, new_sex, new_cp, new_restingbp, new_chol,
             new_fbs, new_ecg, new_maxhr, new_angina,
             new_oldpeak, new_slope
@@ -44,12 +70,11 @@ if submit:
             'Oldpeak', 'ST_Slope'
         ])
 
-        hasil_prediksi = model.predict(new_data_df)[0]
-        label_mapping = {0: 'Tidak Memiliki Penyakit Jantung', 1: 'Memiliki Penyakit Jantung'}
-        hasil_label = label_mapping.get(hasil_prediksi, 'Tidak diketahui')
+        hasil = model.predict(input_data)[0]
+        label = "Memiliki Penyakit Jantung" if hasil == 1 else "Tidak Memiliki Penyakit Jantung"
 
         st.subheader("Hasil Prediksi:")
-        st.success(f"Pasien diprediksi: **{hasil_label}**")
+        st.success(f"Pasien diprediksi: **{label}**")
 
     except Exception as e:
         st.error(f"Terjadi kesalahan saat memproses input: {e}")
