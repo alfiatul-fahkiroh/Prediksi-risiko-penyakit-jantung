@@ -2,12 +2,14 @@ import streamlit as st
 import pandas as pd
 import joblib
 
-# Load model SVM
-model = joblib.load('model_penyakit_jantung.pkl')
+# Load model Random Forest dari file
+rf_model = joblib.load('model_penyakit_jantung.pkl')
 
+# Judul aplikasi
 st.title("Prediksi Risiko Penyakit Jantung")
-st.write("Masukkan data pasien di bawah ini untuk mengetahui kemungkinan risiko penyakit jantung.")
+st.write("Silakan isi data berikut untuk memprediksi apakah pasien berisiko terkena penyakit jantung.")
 
+# Form input pengguna
 with st.form("form_prediksi"):
     new_age = st.number_input("Usia", min_value=1, max_value=120, value=50)
 
@@ -24,7 +26,6 @@ with st.form("form_prediksi"):
     )
 
     new_restingbp = st.number_input("Tekanan Darah Istirahat (mm Hg)", min_value=0, max_value=300, value=120)
-
     new_chol = st.number_input("Kadar Kolesterol (mg/dL)", min_value=0, max_value=700, value=200)
 
     new_fbs = st.selectbox(
@@ -55,12 +56,14 @@ with st.form("form_prediksi"):
         format_func=lambda x: {0: "Down", 1: "Flat", 2: "Up"}[x]
     )
 
+    # Tombol prediksi
     submit = st.form_submit_button("Prediksi")
 
 # Proses prediksi
 if submit:
     try:
-        input_data = pd.DataFrame([[
+        # Buat DataFrame dari input pengguna
+        new_data_df = pd.DataFrame([[
             new_age, new_sex, new_cp, new_restingbp, new_chol,
             new_fbs, new_ecg, new_maxhr, new_angina,
             new_oldpeak, new_slope
@@ -70,11 +73,15 @@ if submit:
             'Oldpeak', 'ST_Slope'
         ])
 
-        hasil = model.predict(input_data)[0]
-        label = "Memiliki Penyakit Jantung" if hasil == 1 else "Tidak Memiliki Penyakit Jantung"
+        # Prediksi
+        hasil_prediksi = rf_model.predict(new_data_df)[0]
+        label_mapping = {0: 'Tidak Memiliki Penyakit Jantung', 1: 'Memiliki Penyakit Jantung'}
+        hasil_label = label_mapping.get(hasil_prediksi, 'Tidak diketahui')
 
+        # Tampilkan hasil
         st.subheader("Hasil Prediksi:")
-        st.success(f"Pasien diprediksi: **{label}**")
+        st.success(f"Pasien diprediksi: **{hasil_label}**")
 
     except Exception as e:
         st.error(f"Terjadi kesalahan saat memproses input: {e}")
+
